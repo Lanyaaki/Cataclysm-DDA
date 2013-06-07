@@ -19,6 +19,8 @@
 // Special function for setting melee techniques
 #define TECH(id, t) itypes[id]->techniques = t
 
+int itype::iid_inc = 0;
+
 std::vector<std::string> unreal_itype_ids;
 std::vector<std::string> martial_arts_itype_ids;
 std::vector<std::string> artifact_itype_ids;

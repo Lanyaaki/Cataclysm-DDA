@@ -1,0 +1,29 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+ <head>
+  <title> new document </title>
+  <meta name="generator" content="editplus" />
+  <meta name="author" content="" />
+  <meta name="keywords" content="" />
+  <meta name="description" content="" />
+<style type="text/css">
+#prev div {width:14px; height:14px; border:solid 1px black; overflow:hidden; float:left; color:red; font-size:12px;}
+</style>
+ </head>
+
+ <body>
+  <div style="width:256px; height:2048px; position:relative; overflow:hidden;">
+    <img style="width:256px; height:2048px; position:absolute; left:0; top:0;filter:none;" src="tile.bmp" />
+    <div id="prev" style="width:256px; height:2048px; position:absolute; overflow:hidden; left:0; top:0;">
+      
+    </div>
+  </div>
+<script type="text/javascript">
+var s='';
+for(var i=0; i<256*2048/16/16; i++) {
+  s += '<div title="'+i+'">&nbsp;</div>';
+}
+document.getElementById("prev").innerHTML = s;
+</script>
+ </body>
+</html>

@@ -151,6 +151,8 @@ itype_id default_ammo(ammotype guntype);
 
 struct itype
 {
+ static int iid_inc;
+ int iid;
  itype_id id;		// ID # that matches its place in master itype list
  			// Used for save files; aligns to itype_id above.
  unsigned char rarity;	// How often it's found
@@ -205,6 +207,7 @@ struct itype
  void (iuse::*use)(game *, player *, item *, bool);// Special effects of use
 
  itype() {
+  iid = iid_inc++;
   id = "null";
   rarity = 0;
   name  = "none";
@@ -227,6 +230,7 @@ struct itype
        unsigned short pvolume, unsigned short pweight,
        signed char pmelee_dam, signed char pmelee_cut, signed char pm_to_hit,
        unsigned ptechniques = 0) {
+  iid = iid_inc++;
   id          = pid;
   rarity      = prarity;
   price       = pprice;
