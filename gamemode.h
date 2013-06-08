@@ -25,7 +25,7 @@ struct special_game
  virtual ~special_game() { return; };
  virtual special_game_id id() { return SGAME_NULL; };
 // init is run when the game begins
- virtual bool init(game *g) { return true; };
+ virtual bool init(game *g) {  return true; };
 // per_turn is run every turn--before any player actions
  virtual void per_turn(game *g) { };
 // pre_action is run after a keypress, but before the game handles the action

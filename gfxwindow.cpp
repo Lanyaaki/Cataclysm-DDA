@@ -149,7 +149,7 @@ LRESULT CALLBACK GfxProcessMessages(HWND__ *hWnd,unsigned int Msg,
 			}
 			SendMessage(WindowHandle, Msg, wParam, lParam);
             break;
-        case WM_DESTROY:
+        case WM_CLOSE:
         case WM_ERASEBKGND:
             return 1;               //We don't want to erase our backgroundon't want to erase our background
         case WM_PAINT:              //Pull from our backbuffer, onto the screen

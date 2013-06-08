@@ -78,17 +78,7 @@ int main(int argc, char *argv[])
  do {
   g->setup();
 
-////////////////////GDI tile code ///////////////////////////////
-#if (defined GDI_TILE)
-  extern bool GfxWinCreate(game* g);
-  extern void GfxDraw(int destx=0, int desty=0, int centerx=-1, int centery=-1, int width=-1, int height=-1);
-#else
-  #define GfxWinCreate(x)
-  #define GfxDraw()
-#endif
-  GfxWinCreate(g);GfxDraw();
-  while (!g->do_turn()) GfxDraw();
-////////////////////end GDI tile code ///////////////////////////
+  while (!g->do_turn()) ;
 
   if (g->uquit == QUIT_DELETE_WORLD)
     delete_world = true;

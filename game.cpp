@@ -50,6 +50,14 @@
 void intro();
 nc_color sev(int a);	// Right now, ONLY used for scent debugging....
 
+#if (defined GDI_TILE)
+extern bool GfxWinCreate(game* g);
+extern void GfxDraw(int destx=0, int desty=0, int centerx=-1, int centery=-1, int width=-1, int height=-1);
+#else
+#define GfxWinCreate(x)
+#define GfxDraw()
+#endif
+
 uistatedata uistate;
 
 // This is the main game set-up process.
@@ -88,6 +96,7 @@ game::game() :
  moveCount = 0;
 
  gamemode = new special_game;	// Nothing, basically.
+ GfxWinCreate(this);
 }
 
 game::~game()
@@ -1936,6 +1945,7 @@ bool game::handle_action()
  }
 
  gamemode->post_action(this, act);
+ GfxDraw();
 
  return true;
 }
