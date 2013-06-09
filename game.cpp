@@ -550,8 +550,10 @@ bool game::do_turn()
           if (!u.has_disease(DI_SLEEP) && u.activity.type == ACT_NULL)
               draw();
 
-          if(handle_action())
+          if(handle_action()) {
               ++moves_since_last_save;
+              u.action_taken();
+          }
 
           if (is_game_over()) {
               cleanup_at_end();
@@ -1512,6 +1514,7 @@ bool game::handle_action()
  int soffset = OPTIONS[OPT_MOVE_VIEW_OFFSET];
  int soffsetr = 0 - soffset;
 
+ int before_action_moves = u.moves;
 
  switch (act) {
 
@@ -1826,10 +1829,30 @@ bool game::handle_action()
 
   case ACTION_SLEEP:
    if (veh_ctrl) {
-    add_msg("Vehicle control has moved, new default binding is '^'.");
-   } else if (query_yn("Are you sure you want to sleep?")) {
-    u.try_to_sleep(this);
-    u.moves = 0;
+     add_msg("Vehicle control has moved, new default binding is '^'.");
+   } else {
+     if (OPTIONS[OPT_SAVESLEEP] && (moves_since_last_save || item_exchanges_since_save) &&
+         !(u.in_vehicle)) {
+       if (query_yn("Do you want to save game before sleeping?")) {
+         //copied from autosave()
+         time_t now = time(NULL);
+
+         add_msg("Saving game, this may take a while");
+         save();
+
+         save_factions_missions_npcs();
+         save_artifacts();
+         save_maps();
+
+         moves_since_last_save = 0;
+         item_exchanges_since_save = 0;
+         last_save_timestamp = now;
+       }
+     }
+     if (query_yn("Are you sure you want to sleep?")) {
+       u.try_to_sleep(this);
+       u.moves = 0;
+     }
    }
    break;
 
@@ -1946,6 +1969,8 @@ bool game::handle_action()
 
  gamemode->post_action(this, act);
  GfxDraw();
+
+ u.movecounter = before_action_moves - u.moves;
 
  return true;
 }
@@ -2462,17 +2487,6 @@ void game::save_factions_missions_npcs ()
     for (int i = 0; i < factions.size(); i++)
         fout << factions[i].save_info() << std::endl;
 
-    //Currently all npcs are also saved in the omap. Just cleaning out the
-    //current active npc list should be enough.
-    for (int i = 0; i < active_npc.size(); i++)
-    {
-        active_npc[i]->omx = cur_om->pos().x;
-        active_npc[i]->omy = cur_om->pos().y;
-        active_npc[i]->mapx = levx + (active_npc[i]->posx / SEEX);
-        active_npc[i]->mapy = levy + (active_npc[i]->posy / SEEY);
-        active_npc[i]->posx %= SEEX;
-        active_npc[i]->posy %= SEEY;
-    }
     fout.close();
 }
 
@@ -5494,6 +5508,9 @@ void game::control_vehicle()
 {
     int veh_part;
     vehicle *veh = m.veh_at(u.posx, u.posy, veh_part);
+    int seat = -1;
+    if (veh)
+        seat = veh->part_with_feature(veh_part, vpf_seat);
 
     if (veh && veh->player_in_control(&u)) {
         std::string message = veh->use_controls();
@@ -5501,6 +5518,11 @@ void game::control_vehicle()
             add_msg(message.c_str());
     } else if (u.in_vehicle) {
         exit_vehicle();
+    } else if (veh && seat >= 0 &&
+               !veh->parts[seat].has_flag(vehicle_part::passenger_flag)) {
+        m.board_vehicle(this, u.posx, u.posy, &u);
+        u.moves -= 100;
+        add_msg("You sit down.");
     } else {
         int examx, examy;
         if (!choose_adjacent("Control vehicle", examx, examy))
@@ -8073,7 +8095,11 @@ void game::plfire(bool burst)
  draw_ter(); // Recenter our view
  if (trajectory.size() == 0) {
   if(u.weapon.has_flag("RELOAD_AND_SHOOT"))
-   unload(u.weapon);
+  {
+      u.moves += u.weapon.reload_time(u);
+      unload(u.weapon);
+      u.moves += u.weapon.reload_time(u) / 2; // unloading time
+  }
   return;
  }
  if (passtarget != -1) { // We picked a real live target
@@ -8873,7 +8899,7 @@ void game::plmove(int x, int y)
       }
 
 // Calculate cost of moving
-  u.moves -= u.run_cost(m.move_cost(x, y) * 50 ) * ( trigdist && x != u.posx && y != u.posy ? 1.41 : 1 );
+  u.moves -= u.run_cost(m.combined_movecost(u.posx, u.posy, x, y));
 
 // Adjust recoil down
   if (u.recoil > 0) {
@@ -9233,7 +9259,8 @@ void game::vertical_move(int movez, bool force)
 // Force means we're going down, even if there's no staircase, etc.
 // This happens with sinkholes and the like.
  if (!force && ((movez == -1 && !m.has_flag(goes_down, u.posx, u.posy)) ||
-                (movez ==  1 && !m.has_flag(goes_up,   u.posx, u.posy))   )) {
+                (movez ==  1 && !m.has_flag(goes_up,   u.posx, u.posy)) ||
+                !m.ter(u.posx, u.posy) == t_elevator )) {
   add_msg("You can't go %s here!", (movez == -1 ? "down" : "up"));
   return;
  }
@@ -9252,8 +9279,9 @@ void game::vertical_move(int movez, bool force)
     for (int j = u.posy - SEEY * 2; j <= u.posy + SEEY * 2; j++) {
     if (rl_dist(u.posx, u.posy, i, j) <= best &&
         ((movez == -1 && tmpmap.has_flag(goes_up, i, j)) ||
-         (movez ==  1 && (tmpmap.has_flag(goes_down, i, j) ||
-                          tmpmap.ter(i, j) == t_manhole_cover)))) {
+         (movez == 1 && (tmpmap.has_flag(goes_down, i, j) ||
+                         tmpmap.ter(i, j) == t_manhole_cover)) ||
+         ((movez == 2 || movez == -2) && tmpmap.ter(i, j) == t_elevator))) {
      stairx = i;
      stairy = j;
      best = rl_dist(u.posx, u.posy, i, j);
@@ -9290,8 +9318,9 @@ void game::vertical_move(int movez, bool force)
   monstairx = levx;
   monstairy = levy;
   monstairz = levz;
-  despawn_monsters(true);
  }
+ // Despawn monsters, only push them onto the stair monster list if we're taking stairs.
+ despawn_monsters( abs(movez) == 1 && !force );
  z.clear();
 
 // Figure out where we know there are up/down connectors

@@ -133,28 +133,15 @@ int trange = rl_dist(p.posx, p.posy, tarx, tary);
   if (curshot > 0 &&
       (mon_at(tarx, tary) == -1 || z[mon_at(tarx, tary)].hp <= 0)) {
    std::vector<point> new_targets;
-   int mondex;
-   for (int radius = 1; radius <= 2 + p.skillLevel("gun") && new_targets.empty();
+   for (int radius = 1; radius <= 2 + p.skillLevel("gun") && radius <= p.weapon.range() && new_targets.empty();
         radius++) {
-    for (int diff = 0 - radius; diff <= radius; diff++) {
-     mondex = mon_at(tarx + diff, tary - radius);
-     if (mondex != -1 && z[mondex].hp > 0 && z[mondex].friendly == 0)
-      new_targets.push_back( point(tarx + diff, tary - radius) );
-
-     mondex = mon_at(tarx + diff, tary + radius);
-     if (mondex != -1 && z[mondex].hp > 0 && z[mondex].friendly == 0)
-      new_targets.push_back( point(tarx + diff, tary + radius) );
-
-     if (diff != 0 - radius && diff != radius) { // Corners were already checked
-      mondex = mon_at(tarx - radius, tary + diff);
-      if (mondex != -1 && z[mondex].hp > 0 && z[mondex].friendly == 0)
-       new_targets.push_back( point(tarx - radius, tary + diff) );
-
-      mondex = mon_at(tarx + radius, tary + diff);
-      if (mondex != -1 && z[mondex].hp > 0 && z[mondex].friendly == 0)
-       new_targets.push_back( point(tarx + radius, tary + diff) );
-     }
-    }
+       for (std::vector<monster>::iterator it = z.begin(); it != z.end(); it++)
+       {
+           if (rl_dist(p.posx,p.posy,it->posx,it->posy) > radius)
+               continue;
+           if (it->hp >0 && it->friendly == 0)
+               new_targets.push_back(point(it->posx, it->posy));
+       }
    }
    if (!new_targets.empty()) {
     int target_picked = rng(0, new_targets.size() - 1);
@@ -204,7 +191,11 @@ int trange = rl_dist(p.posx, p.posy, tarx, tary);
     casing.make(itypes[casing_type]);
     // Casing needs a charges of 1 to stack properly with other casings.
     casing.charges = 1;
-    m.add_item(x, y, casing);
+    if( weapon->has_gunmod("brass_catcher") != -1 ) {
+        p.i_add( casing );
+    } else {
+        m.add_item(x, y, casing);
+    }
    }
   }
 
@@ -291,12 +282,14 @@ int trange = rl_dist(p.posx, p.posy, tarx, tary);
    if (u_see(tx, ty)) {
     if (i > 0)
     {
-        m.drawsq(w_terrain, u, trajectory[i-1].x, trajectory[i-1].y, false, true);
+        m.drawsq(w_terrain, u, trajectory[i-1].x, trajectory[i-1].y, false,
+                 true, u.posx + u.view_offset_x, u.posy + u.view_offset_y);
     }
     char bullet = '*';
     if (effects & mfb(AMMO_FLAME))
      bullet = '#';
-    mvwputch(w_terrain, ty + VIEWY - u.posy, tx + VIEWX - u.posx, c_red, bullet);
+    mvwputch(w_terrain, ty + VIEWY - u.posy - u.view_offset_y,
+             tx + VIEWX - u.posx - u.view_offset_x, c_red, bullet);
     wrefresh(w_terrain);
     if (&p == &u)
      nanosleep(&ts, NULL);
@@ -533,7 +526,7 @@ std::vector<point> game::target(int &x, int &y, int lowx, int lowy, int hix,
 {
  std::vector<point> ret;
  int tarx, tary, junk;
-
+ int range=(hix-u.posx);
 // First, decide on a target among the monsters, if there are any in range
  if (t.size() > 0) {
 // Check for previous target
@@ -584,6 +577,22 @@ std::vector<point> game::target(int &x, int &y, int lowx, int lowy, int hix,
  char ch;
  bool snap_to_target = OPTIONS[OPT_SNAP_TO_TARGET];
  do {
+  ret = line_to(u.posx, u.posy, x, y,0);
+
+  if(trigdist && trig_dist(u.posx,u.posy, x,y) > range) {
+    bool cont=true;
+    int cx=x;
+    int cy=y;
+    for (int i = 0; i < ret.size() && cont; i++) {
+      if(trig_dist(u.posx,u.posy, ret[i].x, ret[i].y) > range) {
+        ret.resize(i);
+        cont=false;
+      } else {
+        cx=0+ret[i].x; cy=0+ret[i].y;
+      }
+    }
+    x=cx;y=cy;
+  }
   point center;
   if (snap_to_target)
    center = point(x, y);
@@ -617,7 +626,6 @@ std::vector<point> game::target(int &x, int &y, int lowx, int lowy, int hix,
    // Only draw a highlighted trajectory if we can see the endpoint.
    // Provides feedback to the player, and avoids leaking information about tiles they can't see.
    if (u_see( x, y)) {
-    ret = line_to(u.posx, u.posy, x, y, 0);
     for (int i = 0; i < ret.size(); i++) {
       int mondex = mon_at(ret[i].x, ret[i].y),
           npcdex = npc_at(ret[i].x, ret[i].y);
@@ -688,6 +696,8 @@ std::vector<point> game::target(int &x, int &y, int lowx, int lowy, int hix,
     if (t[i].posx == x && t[i].posy == y)
      target = i;
    }
+   if (u.posx == x && u.posy == y)
+       ret.clear();
    return ret;
   } else if (ch == '0') {
    x = u.posx;
