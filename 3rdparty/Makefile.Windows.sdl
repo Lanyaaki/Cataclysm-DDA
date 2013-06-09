@@ -1,0 +1,45 @@
+# comment these to toggle them as one sees fit.
+# WARNINGS will spam hundreds of warnings, mostly safe, if turned on
+# DEBUG is best turned on if you plan to debug in gdb -- please do!
+# PROFILE is for use with gprof or a similar program -- don't bother generally
+#WARNINGS = -Wall -Wextra -Wno-switch -Wno-sign-compare -Wno-missing-braces -Wno-unused-parameter -Wno-char-subscripts
+DEBUG = -g
+#PROFILE = -pg
+OTHERS = -O0
+
+ODIR = objwin
+DDIR = .deps
+MINGWROOT = /openbor/tools/win-sdk
+LIBRARIES = $(MINGWROOT)/lib
+INCLUDES = -I"$(MINGWROOT)/include/SDL" -I"$(MINGWROOT)/include/freetype"
+TARGET = showfont.exe
+LIBS = $(addprefix -L", $(addsuffix ", $(LIBRARIES)))
+CC = gcc
+LINKER = ld
+
+CFLAGS = $(WARNINGS) $(DEBUG) $(PROFILE) $(OTHERS) $(INCLUDES)
+LDFLAGS = $(LIBS) -lSDL -lSDL_ttf -lfreetype -luser32 -lgdi32 -lwinmm -ldxguid -lpsapi -mwindows -static
+
+SOURCES = showfont.c
+_OBJS = $(SOURCES:.c=.o)
+OBJS = $(patsubst %,$(ODIR)/%,$(_OBJS))
+
+all: $(TARGET)
+	@
+
+$(TARGET): $(ODIR) $(DDIR) $(OBJS)
+	$(CC) -o $(TARGET) $(CFLAGS) $(OBJS)  $(LDFLAGS) 
+
+$(ODIR):
+	mkdir $(ODIR)
+
+$(DDIR):
+	@mkdir $(DDIR)
+
+$(ODIR)/%.o: %.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
+clean:
+	rm -f $(TARGET) $(ODIR)/*.o
+
+-include $(SOURCES:%.c=$(DEPDIR)/%.P)
