@@ -728,7 +728,7 @@ void GfxDraw(int destx, int desty, int centerx, int centery, int width, int heig
 				//int show_items = true;
 				s = bgt = 0;
 				int tr = g->m.tr_at(x, y);
-				if (tr != tr_null )
+				if (tr != tr_null && g->u.per_cur - g->u.encumb(bp_eyes) >= (g->traps)[tr]->visibility)
 				{
 					if ((g->traps)[tr]->sym == '%') {
 						switch(rng(1, 5)) {
