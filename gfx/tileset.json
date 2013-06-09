@@ -624,7 +624,8 @@
 },
 {
 "id":"t_gas_pump",
-"fg":312
+"fg":312,
+"bg":528
 },
 {
 "id":"t_gas_pump_smashed",
@@ -882,7 +883,7 @@
 },
 {
 "id":"mon_bear",
-"fg":734
+"fg":470
 },
 {
 "id":"mon_cougar",
@@ -930,7 +931,7 @@
 },
 {
 "id":"mon_wasp",
-"fg":0
+"fg":693
 },
 {
 "id":"mon_graboid",
@@ -990,7 +991,7 @@
 },
 {
 "id":"mon_boomer_fungus",
-"fg":934
+"fg":513
 },
 {
 "id":"mon_skeleton",
@@ -1006,7 +1007,7 @@
 },
 {
 "id":"mon_zombie_soldier",
-"fg":934
+"fg":518
 },
 {
 "id":"mon_zombie_grabber",
@@ -1058,7 +1059,7 @@
 },
 {
 "id":"mon_fungaloid",
-"fg":755
+"fg":458
 },
 {
 "id":"mon_fungaloid_dormant",
@@ -1066,7 +1067,7 @@
 },
 {
 "id":"mon_fungaloid_young",
-"fg":754
+"fg":457
 },
 {
 "id":"mon_spore",
@@ -1414,7 +1415,7 @@
 },
 {
 "id":"tr_rollmat",
-"fg":0
+"fg":615
 },
 {
 "id":"tr_beartrap",
@@ -3745,7 +3746,7 @@
 },
 {
 "id":"ant_egg",
-"fg":0
+"fg":480
 },
 {
 "id":"marloss_berry",
