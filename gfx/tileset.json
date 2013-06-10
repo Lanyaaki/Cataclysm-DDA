@@ -1,5 +1,10 @@
 [
 {
+"tile_size":16,
+"viewport_x":25,
+"viewport_y":25
+},
+{
 "id":"unknown",
 "fg":0,
 "bg":0

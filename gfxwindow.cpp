@@ -18,9 +18,11 @@ struct gfxtile
 //***********************************
 //Globals                           *
 //***********************************
-#define tile_size 16
-#define gfx_window_width (tile_size*25)
-#define gfx_window_height (tile_size*25)
+static int tile_size=16;
+static int viewport_x=25;
+static int viewport_y=25;
+#define gfx_window_width (tile_size*viewport_x)
+#define gfx_window_height (tile_size*viewport_y)
 
 game* g;
 
@@ -1082,7 +1084,12 @@ void load_gfx_config(){
         // The one element we absolutely require for an item definition is an id
         if(!entry.has("id") || !entry.get("id").is_string())
         {
-            ;//debugmsg("Item definition skipped, no id found or id was malformed.");
+            if(entry.has("tile_size") )
+                tile_size = entry.get("tile_size").as_int();
+            if(entry.has("viewport_x") )
+                viewport_x = entry.get("viewport_x").as_int();
+            if(entry.has("viewport_y") )
+                viewport_y = entry.get("viewport_y").as_int();
         }
         else
         {
