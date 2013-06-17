@@ -298,7 +298,7 @@ bool WinCreate()
 	{
 		return false;
 	}
-    SDL_Surface* bmp = SDL_LoadBMP("/mnt/sdcard/Cataclysm-DDA/data/font/bmpfont.bmp");
+    SDL_Surface* bmp = SDL_LoadBMP("data/font/bmpfont.bmp");
 	if(NULL==bmp) return false;
 	SDL_Surface* font = SDL_CreateRGBSurface(SDL_SWSURFACE, bmp->w, bmp->h, 32, 0xff, 0xff00, 0xff0000, 0xff000000);
 	SDL_BlitSurface(bmp, NULL, font, NULL);
