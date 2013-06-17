@@ -6,7 +6,7 @@
 #include "debug.h"
 #include <cstdlib>
 #include <fstream>
-
+#include <unistd.h>
 #include "SDL.h"
 
 //***********************************
@@ -298,7 +298,10 @@ bool WinCreate()
 	{
 		return false;
 	}
-    SDL_Surface* bmp = SDL_LoadBMP("data/font/bmpfont.bmp");
+	//SDL hard coded android file path so we have to hack it a bit...
+	char font_path[128];
+	strcat(getcwd(font_path, 128), "/data/font/bmpfont.bmp");
+    SDL_Surface* bmp = SDL_LoadBMP(font_path);
 	if(NULL==bmp) return false;
 	SDL_Surface* font = SDL_CreateRGBSurface(SDL_SWSURFACE, bmp->w, bmp->h, 32, 0xff, 0xff00, 0xff0000, 0xff000000);
 	SDL_BlitSurface(bmp, NULL, font, NULL);
