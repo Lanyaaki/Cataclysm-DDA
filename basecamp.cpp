@@ -29,7 +29,7 @@ std::string basecamp::save_data() const
 	// TODO: This will lose underscores, is that a problem?
 	// strip spaces from name
 	std::string savename = name;
-	replace(savename.begin(), savename.end(), ' ', '_');
+	std::replace(savename.begin(), savename.end(), ' ', '_');
 
 	data << savename << " " << posx << " " << posy;
  return data.str();
@@ -41,5 +41,5 @@ void basecamp::load_data(std::string const& data)
  stream >> name >> posx >> posy;
 
  // add space to name
- replace(name.begin(), name.end(), '_', ' ');
+ std::replace(name.begin(), name.end(), '_', ' ');
 }

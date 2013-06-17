@@ -35,7 +35,7 @@
 #include <sys/stat.h>
 #include "debug.h"
 #include "artifactdata.h"
-
+#include <cctype>
 #if (defined _WIN32 || defined __WIN32__)
 #include <windows.h>
 #include <tchar.h>
@@ -586,8 +586,8 @@ bool game::do_turn()
 void game::rustCheck()
 {
     bool forgetful = u.has_trait(PF_FORGETFUL);
-    for (std::vector<Skill*>::iterator aSkill = ++Skill::skills.begin();
-         aSkill != Skill::skills.end(); ++aSkill) {
+    std::vector<Skill*>::iterator aSkill = Skill::skills.begin();
+    for (aSkill++;aSkill != Skill::skills.end(); ++aSkill) {
         bool charged_bio_mem = u.has_bionic("bio_memory") && u.power_level > 0;
         int oldSkillLevel = u.skillLevel(*aSkill);
 

@@ -150,7 +150,7 @@ struct player_activity
  {
   std::stringstream ret;
   // name can be empty, so make sure we prepend something to it
-  ret << type << " " << moves_left << " " << index << " " << invlet << " str:" << name << " "
+  ret << type << " " << moves_left << " " << index << " " << invlet << " str:" << name.c_str() << " "
          << placement.x << " " << placement.y << " " << values.size();
   for (int i = 0; i < values.size(); i++)
    ret << " " << values[i];
@@ -161,9 +161,9 @@ struct player_activity
  void load_info(std::stringstream &dump)
  {
   int tmp, tmptype;
-  std::string tmpname;
+  char tmpname[256];
   dump >> tmptype >> moves_left >> index >> invlet >> tmpname >> placement.x >> placement.y >> tmp;
-  name = tmpname.substr(4);
+  name = std::string(tmpname).substr(4);
   type = activity_type(tmptype);
   for (int i = 0; i < tmp; i++) {
    int tmp2;

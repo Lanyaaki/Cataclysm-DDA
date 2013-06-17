@@ -15,6 +15,11 @@
 #include <cstdlib>
 #include <signal.h>
 
+#if (defined ANDROID)
+#include <unistd.h>
+#include "SDL.h"
+#endif
+
 void exit_handler(int s);
 
 #ifdef USE_WINMAIN
@@ -26,6 +31,11 @@ int APIENTRY	WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdL
 int main(int argc, char *argv[])
 {
 #endif
+  
+#if (defined ANDROID)
+    chdir("/mnt/sdcard/Cataclysm-DDA/");
+#endif
+
 #ifdef ENABLE_LOGGING
   setupDebug();
 #endif
