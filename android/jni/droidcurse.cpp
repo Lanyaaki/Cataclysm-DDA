@@ -1,4 +1,4 @@
-#if (defined ANDROID)
+#if (defined __ANDROID__)
 #include "catacurse.h"
 #include "options.h"
 #include "output.h"
