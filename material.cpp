@@ -68,7 +68,7 @@ material_type::material_type(std::string ident)
     _density = mat_type->density();
 }
 
-material_map material_type::_all_materials(material_type::load_materials());
+material_map material_type::_all_materials;
 
 material_map material_type::load_materials()
 {
