@@ -17,7 +17,13 @@ LOCAL_PATH:= $(call my-dir)
 include $(CLEAR_VARS)
 
 LOCAL_MODULE    := SDL2
-LOCAL_SRC_FILES := lib/libSDL2.so
+
+ifeq ($(TARGET_ARCH_ABI),armeabi) 
+LOCAL_SRC_FILES := lib/armeabi/libSDL2.so
+endif
+ifeq ($(TARGET_ARCH_ABI),armeabi-v7a) 
+LOCAL_SRC_FILES := lib/armeabi-v7a/libSDL2.so
+endif
 
 include $(PREBUILT_SHARED_LIBRARY)
 

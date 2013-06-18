@@ -22,6 +22,7 @@
 #include "overmapbuffer.h"
 #include "trap.h"
 #include "mapdata.h"
+#include "profession.h"
 #include <map>
 #include <algorithm>
 #include <string>
@@ -68,6 +69,8 @@ game::game() :
 {
  dout() << "Game initialized.";
 // Gee, it sure is init-y around here!
+ profession::_all_profs = profession::load_professions();
+ material_type::_all_materials = material_type::load_materials();
  init_skills();
  init_bionics();      // Set up bionics                   (SEE bionics.cpp)
  init_itypes();	      // Set up item types                (SEE itypedef.cpp)

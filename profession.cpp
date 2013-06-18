@@ -25,7 +25,7 @@ profession::profession(unsigned int id, std::string ident, std::string name, std
     _point_cost = points;
 }
 
-profmap profession::_all_profs(profession::load_professions());
+profmap profession::_all_profs;
 
 profmap profession::load_professions()
 {
