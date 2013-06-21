@@ -52,6 +52,7 @@ void Item_factory::init(){
     iuse_function_list["GRACK"] = &iuse::grack;
     iuse_function_list["METH"] = &iuse::meth;
     iuse_function_list["VITAMINS"] = &iuse::vitamins;
+    iuse_function_list["VACCINE"] = &iuse::vaccine;
     iuse_function_list["POISON"] = &iuse::poison;
     iuse_function_list["HALLU"] = &iuse::hallu;
     iuse_function_list["THORAZINE"] = &iuse::thorazine;
@@ -86,6 +87,7 @@ void Item_factory::init(){
     iuse_function_list["DIRECTIONAL_ANTENNA"] = &iuse::directional_antenna;
     iuse_function_list["DEVAC"] = &iuse::devac;
     iuse_function_list["CAUTERIZE_ELEC"] = &iuse::cauterize_elec;
+    iuse_function_list["SOLDER_WELD"] = &iuse::solder_weld;
     iuse_function_list["WATER_PURIFIER"] = &iuse::water_purifier;
     iuse_function_list["TWO_WAY_RADIO"] = &iuse::two_way_radio;
     iuse_function_list["RADIO_OFF"] = &iuse::radio_off;
@@ -128,6 +130,7 @@ void Item_factory::init(){
     iuse_function_list["SMOKEBOMB_ACT"] = &iuse::smokebomb_act;
     iuse_function_list["ACIDBOMB"] = &iuse::acidbomb;
     iuse_function_list["ACIDBOMB_ACT"] = &iuse::acidbomb_act;
+    iuse_function_list["ARROW_FLAMABLE"] = &iuse::arrow_flamable;
     iuse_function_list["MOLOTOV"] = &iuse::molotov;
     iuse_function_list["MOLOTOV_LIT"] = &iuse::molotov_lit;
     iuse_function_list["DYNAMITE"] = &iuse::dynamite;
@@ -234,6 +237,7 @@ void Item_factory::init(){
 
     ammo_effects_list["FLAME"] = mfb(AMMO_FLAME);
     ammo_effects_list["INCENDIARY"] = mfb(AMMO_INCENDIARY);
+    ammo_effects_list["IGNITE"] = mfb(AMMO_IGNITE);
     ammo_effects_list["EXPLOSIVE"] = mfb(AMMO_EXPLOSIVE);
     ammo_effects_list["FRAG"] = mfb(AMMO_FRAG);
     ammo_effects_list["NAPALM"] = mfb(AMMO_NAPALM);
@@ -352,6 +356,7 @@ void Item_factory::load_item_templates(){
     load_item_templates_from("data/raw/items/comestibles.json");
     load_item_templates_from("data/raw/items/armor.json");
     load_item_templates_from("data/raw/items/books.json");
+	load_item_templates_from("data/raw/items/archery.json");
     load_item_groups_from("data/raw/item_groups.json");
 }
 

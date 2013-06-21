@@ -1177,6 +1177,24 @@ bool game::mission_complete(int id, int npc_id)
    }
    return false;
 
+  case MGOAL_RECRUIT_NPC:
+   for (int i = 0; i < cur_om->npcs.size(); i++) {
+    if (cur_om->npcs[i]->getID() == miss->recruit_npc_id) {
+        if (cur_om->npcs[i]->attitude == NPCATT_FOLLOW)
+            return true;
+    }
+   }
+   return false;
+
+  case MGOAL_RECRUIT_NPC_CLASS:
+   for (int i = 0; i < cur_om->npcs.size(); i++) {
+    if (cur_om->npcs[i]->myclass == miss->recruit_class) {
+            if (cur_om->npcs[i]->attitude == NPCATT_FOLLOW)
+                return true;
+    }
+   }
+   return false;
+
   case MGOAL_FIND_NPC:
    return (miss->npc_id == npc_id);
 
@@ -1848,7 +1866,7 @@ bool game::handle_action()
        as_m.entries.push_back(uimenu_entry(0, true, (OPTIONS[OPT_FORCE_YN]?'Y':'y'),
            "Yes." ));
        if (OPTIONS[OPT_SAVESLEEP]) {
-         as_m.entries.push_back(uimenu_entry(1, 
+         as_m.entries.push_back(uimenu_entry(1,
              (moves_since_last_save || item_exchanges_since_save) && !u.in_vehicle,
              (OPTIONS[OPT_FORCE_YN]?'S':'s'),
              "Yes, and save game before sleeping." ));
@@ -5984,11 +6002,6 @@ void game::advanced_inv()
     int w_height = (TERMY<min_w_height+head_height) ? min_w_height : TERMY-head_height;
     int w_width = (TERMX<min_w_width) ? min_w_width : (TERMX>max_w_width) ? max_w_width : (int)TERMX;
 
-    if (u.in_vehicle)
-    {
-        add_msg("Exit vehicle first");
-        return;
-    }
     int headstart = 0; //(TERMY>w_height)?(TERMY-w_height)/2:0;
     int colstart = (TERMX > w_width) ? (TERMX - w_width)/2 : 0;
     WINDOW *head = newwin(head_height,w_width, headstart, colstart);
@@ -6233,13 +6246,9 @@ void game::advanced_inv()
                 }
                 if ( ! showmsg ) {
                   mvwprintz(head,0,w_width-18,c_white,"< [?] show log >");
-                  mvwprintz(head,1,3, c_white, "hjkl or arrow keys to move cursor");
-                  //wprintz(head, c_white, " %d %d/%d %d/%d",panes[src].size,panes[src].index,panes[src].max_index,panes[src].page,panes[src].max_page);
-                  mvwprintz(head,2,3, c_white, "1-9 to select square for active tab. 0 for inventory");
-                  mvwprintz(head,3,3, c_white, "(or GHJKLYUBNI)");
-                  mvwprintz(head,1,(w_width/2), c_white, "[m]ove item between screen.");
-                  mvwprintz(head,2,(w_width/2), c_white, "[e]amine item.  [s]ort display.");
-                  mvwprintz(head,3,(w_width/2), c_white, "[q]uit/exit this screen");
+                  mvwprintz(head,1,2, c_white, "hjkl or arrow keys to move cursor, [m]ove item between panes,");
+                  mvwprintz(head,2,2, c_white, "1-9 (or GHJKLYUBNI) to select square for active tab, 0 for inventory,");
+                  mvwprintz(head,3,2, c_white, "[e]xamine item,  [s]ort display, [q]uit/exit this screen.");
                 } else {
                   mvwprintz(head,0,w_width-19,c_white,"< [?] show help >");
                 }
@@ -6361,12 +6370,12 @@ void game::advanced_inv()
                 }
                 if ( ! valid ) continue;
             }
-// from inventory            
+// from inventory
             if(panes[src].area == isinventory) {
 
                 int max = (squares[destarea].max_size - squares[destarea].size);
                 int volmax = max;
-                int free_volume = ( squares[ destarea ].vstor >= 0 ? 
+                int free_volume = ( squares[ destarea ].vstor >= 0 ?
                     squares[ destarea ].veh->free_volume( squares[ destarea ].vstor ) :
                     m.free_volume ( squares[ destarea ].x, squares[ destarea ].y )
                 ) * 100;
@@ -6376,7 +6385,7 @@ void game::advanced_inv()
 
                 int amount = 1;
                 int volume = it->volume() * 100; // sigh
-                
+
                 bool askamount = false;
                 if ( stack.size() > 1) {
                     amount = stack.size();
@@ -6386,7 +6395,7 @@ void game::advanced_inv()
                     volume = it->type->volume;
                     askamount = true;
                 }
- 
+
                 if ( volume > 0 && volume * amount > free_volume ) {
                     volmax = int( free_volume / volume );
                     if ( volmax == 0 ) {
@@ -6411,14 +6420,14 @@ void game::advanced_inv()
                         popupmsg="Destination can only hold " + helper::to_string(max) + "! Move how many? (0 to cancel) ";
                     }
                     // fixme / todo make popup take numbers only (m = accept, q = cancel)
-                    amount = helper::to_int( 
-                        string_input_popup( popupmsg, 20, 
+                    amount = helper::to_int(
+                        string_input_popup( popupmsg, 20,
                              helper::to_string(
-                                 ( amount > max ? max : amount ) 
+                                 ( amount > max ? max : amount )
                              )
                         )
                     );
-                }    
+                }
                 recalc=true;
                 if(stack.size() > 1) { // if the item is stacked
                     if ( amount != 0 && amount <= stack.size() ) {
@@ -6430,7 +6439,7 @@ void game::advanced_inv()
                             iter != moving_items.end();
                             ++iter)
                         {
-                          
+
                           if ( chargeback == true ) {
                                 u.i_add(*iter,this);
                           } else {
@@ -7142,15 +7151,6 @@ point game::look_around()
  mvwprintz(w_look, 3, 1, c_white, "to a nearby square.");
  wrefresh(w_look);
  do {
- DebugLog() << __FUNCTION__ << "calling get_input() \n";
-  input = get_input();
-  if (!u_see(lx, ly))
-   mvwputch(w_terrain, ly - u.posy + VIEWY, lx - u.posx + VIEWX, c_black, ' ');
-  get_direction(mx, my, input);
-  if (mx != -2 && my != -2) {	// Directional key pressed
-   lx += mx;
-   ly += my;
-  }
   werase(w_terrain);
   draw_ter(lx, ly);
   for (int i = 1; i < 12; i++) {
@@ -7233,18 +7233,26 @@ point game::look_around()
        m.drawsq(w_terrain, u, lx, ly, true, true, lx, ly);
    } else if (m.has_flag(container, lx, ly)) {
        mvwprintw(w_look, 3, 1, "You cannot see what is inside of it.");
+       m.drawsq(w_terrain, u, lx, ly, true, false, lx, ly);
+   }
+   else if (lx == u.posx + u.view_offset_x && ly == u.posy + u.view_offset_y)
+   {
+       int x,y;
+       x = getmaxx(w_terrain)/2 - u.view_offset_x;
+       y = getmaxy(w_terrain)/2 - u.view_offset_y;
+       mvwputch_inv(w_terrain, y, x, u.color(), '@');
+
+       mvwprintw(w_look, 1, 1, "You (%s)", u.name.c_str());
+       if (veh) {
+           mvwprintw(w_look, 3, 1, "There is a %s there. Parts:", veh->name.c_str());
+           veh->print_part_desc(w_look, 4, 48, veh_part);
+           m.drawsq(w_terrain, u, lx, ly, true, true, lx, ly);
+   }
+
    }
    else
    {
        m.drawsq(w_terrain, u, lx, ly, true, true, lx, ly);
-   }
-  } else if (lx == u.posx && ly == u.posy) {
-   mvwputch_inv(w_terrain, VIEWX, VIEWY, u.color(), '@');
-   mvwprintw(w_look, 1, 1, "You (%s)", u.name.c_str());
-   if (veh) {
-    mvwprintw(w_look, 3, 1, "There is a %s there. Parts:", veh->name.c_str());
-    veh->print_part_desc(w_look, 4, 48, veh_part);
-    m.drawsq(w_terrain, u, lx, ly, true, true, lx, ly);
    }
   } else if (u.sight_impaired() &&
               m.light_at(lx, ly) == LL_BRIGHT &&
@@ -7263,6 +7271,16 @@ point game::look_around()
    mvwprintw(w_look, 6, 1, "Graffiti: %s", m.graffiti_at(lx, ly).contents->c_str());
   wrefresh(w_look);
   wrefresh(w_terrain);
+  
+  DebugLog() << __FUNCTION__ << "calling get_input() \n";
+  input = get_input();
+  if (!u_see(lx, ly))
+   mvwputch(w_terrain, ly - u.posy + VIEWY, lx - u.posx + VIEWX, c_black, ' ');
+  get_direction(mx, my, input);
+  if (mx != -2 && my != -2) {	// Directional key pressed
+   lx += mx;
+   ly += my;
+  }
  } while (input != Close && input != Cancel && input != Confirm);
 
  werase(w_look);
@@ -8020,7 +8038,7 @@ void game::pickup(int posx, int posy, int min)
     if(cur_it == selected) {
         icolor=hilite(icolor);
     }
-    
+
     if (cur_it < pickup_chars.size() ) {
        mvwputch(w_pickup, 1 + (cur_it % maxitems), 0, icolor, char(pickup_chars[cur_it]));
     } else {
@@ -8038,12 +8056,12 @@ void game::pickup(int posx, int posy, int min)
      wprintz(w_pickup, icolor, " (%d)", here[cur_it].charges);
    }
   }
-  mvwprintw(w_pickup, maxitems + 1, 0, "Mark [right]    [up/dn] Scroll    [left] Unmark");
+  mvwprintw(w_pickup, maxitems + 1, 0, "[left] Unmark    [up/dn] Scroll    [right] Mark");
   if (start > 0)
    mvwprintw(w_pickup, maxitems + 2, 0, "[pgup] Prev");
-  mvwprintw(w_pickup, maxitems + 2, 20, " [,] All");
+  mvwprintw(w_pickup, maxitems + 2, 20, "[,] All");
   if (cur_it < here.size())
-   mvwprintw(w_pickup, maxitems + 2, 36, "Next [pgdn]");
+   mvwprintw(w_pickup, maxitems + 2, 36, "[pgdn] Next");
   if (update) {		// Update weight & volume information
    update = false;
    mvwprintw(w_pickup, 0,  7, "                           ");
@@ -9625,7 +9643,7 @@ void game::plmove(int x, int y)
      if (query_yn("Deactivate the turret?")) {
       z.erase(z.begin() + mondex);
       u.moves -= 100;
-      m.spawn_item(z[mondex].posx, z[mondex].posy, "bot_turret", turn);
+      m.spawn_item(x, y, "bot_turret", turn);
      }
      return;
     } else {
@@ -10878,14 +10896,14 @@ std::string game::press_x(action_id act, std::string act_desc)
                 if (z_ing) {
                     keyed.replace(1,1,1,act_desc.at(0));
                     if (key_after) {
-                        keyed += " or '"; 
-                        keyed += (islower(act_desc.at(0)) ? toupper(act_desc.at(0)) 
-                                                          : tolower(act_desc.at(0))); 
+                        keyed += " or '";
+                        keyed += (islower(act_desc.at(0)) ? toupper(act_desc.at(0))
+                                                          : tolower(act_desc.at(0)));
                         keyed += "'";
                     } else {
-                        keyed +=" ('"; 
-                        keyed += (islower(act_desc.at(0)) ? toupper(act_desc.at(0)) 
-                                                          : tolower(act_desc.at(0))); 
+                        keyed +=" ('";
+                        keyed += (islower(act_desc.at(0)) ? toupper(act_desc.at(0))
+                                                          : tolower(act_desc.at(0)));
                         keyed += "'";
                         key_after=true;
                     }
