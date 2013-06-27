@@ -2524,7 +2524,7 @@ bool player::in_climate_control(game *g)
     for (int i = 0; i < worn.size(); i++)
     {
         if ((dynamic_cast<it_armor*>(worn[i].type))->is_power_armor() &&
-            (has_active_item("UPS_on") || has_active_bionic("bio_power_armor_interface") || has_active_bionic("bio_power_armor_interface_mkII")))
+            (has_active_item("UPS_on") || has_active_item("adv_UPS_on") || has_active_bionic("bio_power_armor_interface") || has_active_bionic("bio_power_armor_interface_mkII")))
         {
             return true;
         }
@@ -2724,8 +2724,9 @@ bool player::has_nv()
 
     if( !nv_cached ) {
         nv_cached = true;
-        nv = (is_wearing("goggles_nv") && has_active_item("UPS_on")) ||
-            has_active_bionic("bio_night_vision");
+        nv = ((is_wearing("goggles_nv") && (has_active_item("UPS_on") ||
+                                            has_active_item("adv_UPS_on"))) ||
+              has_active_bionic("bio_night_vision"));
     }
 
     return nv;
@@ -2769,6 +2770,8 @@ int player::throw_range(signed char ch)
   return 0;
  int ret = int((str_cur * 8) / (tmp.weight() > 0 ? tmp.weight() : 10));
  ret -= int(tmp.volume() / 10);
+ if (has_active_bionic("bio_railgun") && (tmp.made_of("iron") || tmp.made_of("steel")))
+    ret *= 2;
  if (ret < 1)
   return 1;
 // Cap at double our strength + skill
@@ -2788,7 +2791,7 @@ int player::ranged_dex_mod(bool real_life)
  int deviation = 0;
  if (dex < 4)
   deviation = 4 * (8 - dex);
- if (dex < 6)
+ else if (dex < 6)
   deviation = 2 * (8 - dex);
  else
   deviation = 1.5 * (8 - dex);
@@ -3930,6 +3933,94 @@ void player::suffer(game *g)
   per_cur = 0;
  if (int_cur < 0)
   int_cur = 0;
+
+ // check for limb mending every 1000 turns (~1.6 hours)
+ if(g->turn.get_turn() % 1000 == 0) {
+  mend(g);
+ }
+}
+
+void player::mend(game *g)
+{
+ // Wearing splints can slowly mend a broken limb back to 1 hp.
+ // 2 weeks is faster than a fracture would heal IRL,
+ // but 3 weeks average (a generous estimate) was tedious and no fun.
+ for(int i = 0; i < num_hp_parts; i++) {
+  int broken = (hp_cur[i] <= 0);
+  if(broken) {
+   // g->add_msg("Checking if it's time to mend...");
+   double mending_odds = 200.0; // 2 weeks, on average. (~20160 minutes / 100 minutes)
+   double healing_factor = 1.0;
+   // Studies have shown that alcohol and tobacco use delay fracture healing time
+   if(has_disease(DI_CIG) | addiction_level(ADD_CIG)) {
+    healing_factor *= 0.5;
+   }
+   if(has_disease(DI_DRUNK) | addiction_level(ADD_ALCOHOL)) {
+    healing_factor *= 0.5;
+   }
+
+   // Bed rest speeds up mending
+   if(has_disease(DI_SLEEP)) {
+    healing_factor *= 4.0;
+   } else if(fatigue > 383) {
+    // but being dead tired does not...
+    healing_factor *= 0.75;
+   }
+
+   // Being healthy helps.
+   if(health > 0) {
+    healing_factor *= 2.0;
+   }
+
+   // And being well fed...
+   if(hunger < 0) {
+    healing_factor *= 2.0;
+   }
+
+   if(thirst < 0) {
+    healing_factor *= 2.0;
+   }
+
+   // Mutagenic healing factor!
+   if(has_trait(PF_REGEN)) {
+    healing_factor *= 16.0;
+   } else if (has_trait(PF_FASTHEALER2)) {
+    healing_factor *= 4.0;
+   } else if (has_trait(PF_FASTHEALER)) {
+    healing_factor *= 2.0;
+   }
+
+   // g->add_msg("Mending odds are %.2f in %.0f, or %f", healing_factor, mending_odds, healing_factor / mending_odds);
+
+   bool mended = false;
+   int side = 0;
+   body_part part;
+   switch(i) {
+    case hp_arm_r:
+     side = 1;
+     // fall-through
+    case hp_arm_l:
+     part = bp_arms;
+     mended = is_wearing("arm_splint") && x_in_y(healing_factor, mending_odds);
+     break;
+    case hp_leg_r:
+     side = 1;
+     // fall-through
+    case hp_leg_l:
+     part = bp_legs;
+     mended = is_wearing("leg_splint") && x_in_y(healing_factor, mending_odds);
+     break;
+    default:
+     // No mending for you!
+     break;
+   }
+   if(mended) {
+    hp_cur[i] = 1;
+    g->add_msg("Your %s has started to mend!",
+      body_part_name(part, side).c_str());
+   }
+  }
+ }
 }
 
 void player::vomit(game *g)
@@ -4073,6 +4164,16 @@ void player::add_morale(morale_type type, int bonus, int max_bonus,
  }
 }
 
+void player::rem_morale(morale_type type, itype* item_type)
+{
+ for (int i = 0; i < morale.size(); i++) {
+  if (morale[i].type == type && morale[i].item_type == item_type) {
+    morale.erase(morale.begin() + i);
+    break;
+  }
+ }
+}
+
 item& player::i_add(item it, game *g)
 {
  itype_id item_type_id = "null";
@@ -4124,9 +4225,9 @@ void player::process_active_items(game *g)
   if (weapon.has_flag("CHARGE")) { // We're chargin it up!
    if (weapon.charges == 8) {
     bool maintain = false;
-    if (use_charges_if_avail("UPS_on", 4)) {
+    if (use_charges_if_avail("adv_UPS_on", 2) || use_charges_if_avail("UPS_on", 4)) {
      maintain = true;
-    } else if (use_charges_if_avail("UPS_off", 4)) {
+    } else if (use_charges_if_avail("adv_UPS_off", 2) || use_charges_if_avail("UPS_off", 4)) {
      maintain = true;
     }
     if (maintain) {
@@ -4139,9 +4240,9 @@ void player::process_active_items(game *g)
       g->add_msg("Your %s beeps alarmingly.", weapon.tname().c_str());
     }
    } else {
-    if (use_charges_if_avail("UPS_on", 1 + weapon.charges)) {
+    if (use_charges_if_avail("adv_UPS_on", (1 + weapon.charges)/2) || use_charges_if_avail("UPS_on", 1 + weapon.charges)) {
      weapon.poison++;
-    } else if (use_charges_if_avail("UPS_off", 1 + weapon.charges)) {
+    } else if (use_charges_if_avail("adv_UPS_off", (1 + weapon.charges)/2) || use_charges_if_avail("UPS_off", 1 + weapon.charges)) {
      weapon.poison++;
     } else {
      g->add_msg("Your %s spins down.", weapon.tname().c_str());
@@ -4995,6 +5096,9 @@ bool player::eat(game *g, signed char ch)
             (use.*comest->use)(g, this, eaten, false);
         }
         add_addiction(comest->add, comest->addict);
+        if (addiction_craving(comest->add) != MORALE_NULL)
+            rem_morale(addiction_craving(comest->add));
+
         if (has_bionic("bio_ethanol") && comest->use == &iuse::alcohol)
             charge_power(rng(2, 8));
         if (has_bionic("bio_ethanol") && comest->use == &iuse::alcohol_weak)
@@ -6623,7 +6727,7 @@ int player::encumb(body_part bp, int &layers, int &armorenc)
 
         if (armor->covers & mfb(bp))
         {
-           if (armor->is_power_armor() && (has_active_item("UPS_on") || has_active_bionic("bio_power_armor_interface") || has_active_bionic("bio_power_armor_interface_mkII")))
+           if (armor->is_power_armor() && (has_active_item("UPS_on") || has_active_item("adv_UPS_on") || has_active_bionic("bio_power_armor_interface") || has_active_bionic("bio_power_armor_interface_mkII")))
             {
                 armorenc += armor->encumber - 4;
             }
